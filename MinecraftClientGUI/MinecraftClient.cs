@@ -16,6 +16,7 @@ namespace MinecraftClientGUI
     class MinecraftClient
     {
         public static string ExePath = "MinecraftClient.exe";
+        private const string GuiRequiredOptions = "--main.advanced.inventory_handling=true";
         public bool Disconnected { get { return disconnected; } }
 
         private LinkedList<string> OutputBuffer = new LinkedList<string>();
@@ -27,14 +28,14 @@ namespace MinecraftClientGUI
 
         public MinecraftClient(string[] args)
         {
-            initClient("\"" + String.Join("\" \"", args) + "\" BasicIO");
+            initClient("\"" + String.Join("\" \"", args) + "\" \"" + GuiRequiredOptions + "\" BasicIO");
         }
 
         public MinecraftClient(string username, string password, string serverip)
         {
             // If the password is empty, pass an empty string to support Microsoft/Browser login
             if (password == null) password = "";
-            initClient('"' + username + "\" \"" + password + "\" \"" + serverip + "\" BasicIO");
+            initClient('"' + username + "\" \"" + password + "\" \"" + serverip + "\" \"" + GuiRequiredOptions + "\" BasicIO");
         }
 
         private void initClient(string arguments)
