@@ -16,7 +16,6 @@ namespace MinecraftClientGUI
     class MinecraftClient
     {
         public static string ExePath = "MinecraftClient.exe";
-        private const string GuiRequiredOptions = "--main.advanced.inventory_handling=true";
         public bool Disconnected { get { return disconnected; } }
 
         private LinkedList<string> OutputBuffer = new LinkedList<string>();
@@ -28,23 +27,25 @@ namespace MinecraftClientGUI
 
         public MinecraftClient(string[] args)
         {
-            initClient("\"" + String.Join("\" \"", args) + "\" \"" + GuiRequiredOptions + "\" BasicIO");
+            initClient("\"" + String.Join("\" \"", args) + "\" BasicIO");
         }
 
         public MinecraftClient(string username, string password, string serverip)
         {
             // If the password is empty, pass an empty string to support Microsoft/Browser login
             if (password == null) password = "";
-            initClient('"' + username + "\" \"" + password + "\" \"" + serverip + "\" \"" + GuiRequiredOptions + "\" BasicIO");
+            initClient('"' + username + "\" \"" + password + "\" \"" + serverip + "\" BasicIO");
         }
 
         private void initClient(string arguments)
         {
             if (File.Exists(ExePath))
             {
+                string executablePath = Path.GetFullPath(ExePath);
                 Client = new Process();
-                Client.StartInfo.FileName = ExePath;
+                Client.StartInfo.FileName = executablePath;
                 Client.StartInfo.Arguments = arguments;
+                Client.StartInfo.WorkingDirectory = Path.GetDirectoryName(executablePath) ?? AppDomain.CurrentDomain.BaseDirectory;
                 Client.StartInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
 
                 // FIX: Forcing UTF-8 fixes Polish characters and colors
