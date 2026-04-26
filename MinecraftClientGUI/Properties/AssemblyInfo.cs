@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("MinecraftClientGUI")]
+[assembly: AssemblyTitle("Client Console")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("MinecraftClientGUI")]
+[assembly: AssemblyProduct("Client Console")]
 [assembly: AssemblyCopyright("Copyright © ORelio 2013")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

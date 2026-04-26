@@ -208,10 +208,43 @@ jobs:
         path: ${{ env.PROJECT }}-${{ env.build-version-info }}-${{ matrix.target }}${{ env.file-ext }}
         if-no-files-found: error
 
+  build-gui:
+    runs-on: windows-latest
+    if: ${{ needs.determine-build.outputs.skip != 'true' &&
+            needs.create-tag.result == 'success'
+          }}
+    needs: [determine-build, create-tag]
+    timeout-minutes: 15
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Build GUI
+      run: msbuild MinecraftClientGUI.sln /restore /p:Configuration=Release /p:Platform=x86 /p:SignManifests=false
+
+    - name: Rename GUI Binary
+      shell: pwsh
+      run: |
+        $tag = "${{ needs.create-tag.outputs.build-tag }}"
+        Copy-Item "MinecraftClientGUI\bin\Release\ClientConsole.exe" "ClientConsole-$tag-win-x86.exe"
+
+    - name: Upload GUI Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ClientConsole-${{ needs.create-tag.outputs.build-tag }}-win-x86
+        path: ClientConsole-${{ needs.create-tag.outputs.build-tag }}-win-x86.exe
+        if-no-files-found: error
+
   create-release:
     runs-on: ubuntu-slim
-    needs: [create-tag, build]
-    if: ${{ needs.build.result == 'success' && needs.create-tag.result == 'success' }}
+    needs: [create-tag, build, build-gui]
+    if: ${{ needs.build.result == 'success' && needs.build-gui.result == 'success' && needs.create-tag.result == 'success' }}
     steps:
       - name: Download All Artifacts
         uses: actions/download-artifact@v4

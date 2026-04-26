@@ -12,21 +12,21 @@ namespace MinecraftClientGUI
 {
     static class Theme
     {
-        public static Color BgDark = Color.FromArgb(15, 15, 18);
-        public static Color BgPanel = Color.FromArgb(22, 22, 28);
-        public static Color BgHeader = Color.FromArgb(28, 28, 36);
-        public static Color BgCard = Color.FromArgb(32, 32, 42);
-        public static Color BgInput = Color.FromArgb(20, 20, 26);
-        public static Color TabActive = Color.FromArgb(38, 38, 52);
-        public static Color TabInactive = Color.FromArgb(22, 22, 28);
-        public static Color Accent = Color.FromArgb(82, 130, 255);
-        public static Color AccentHover = Color.FromArgb(110, 155, 255);
-        public static Color AccentRed = Color.FromArgb(220, 70, 70);
-        public static Color AccentGreen = Color.FromArgb(60, 200, 100);
-        public static Color Text = Color.FromArgb(220, 220, 230);
-        public static Color TextDim = Color.FromArgb(120, 120, 140);
-        public static Color TextMuted = Color.FromArgb(70, 70, 90);
-        public static Color Border = Color.FromArgb(40, 40, 55);
+        public static Color BgDark = Color.FromArgb(248, 248, 248);
+        public static Color BgPanel = Color.FromArgb(239, 239, 239);
+        public static Color BgHeader = Color.FromArgb(245, 245, 245);
+        public static Color BgCard = Color.FromArgb(255, 255, 255);
+        public static Color BgInput = Color.White;
+        public static Color TabActive = Color.White;
+        public static Color TabInactive = Color.FromArgb(232, 232, 232);
+        public static Color Accent = Color.FromArgb(88, 88, 88);
+        public static Color AccentHover = Color.FromArgb(108, 108, 108);
+        public static Color AccentRed = Color.FromArgb(150, 55, 55);
+        public static Color AccentGreen = Color.FromArgb(65, 120, 80);
+        public static Color Text = Color.FromArgb(30, 30, 30);
+        public static Color TextDim = Color.FromArgb(95, 95, 95);
+        public static Color TextMuted = Color.FromArgb(135, 135, 135);
+        public static Color Border = Color.FromArgb(214, 214, 214);
     }
 
     class DarkComboBox : ComboBox
@@ -88,6 +88,7 @@ namespace MinecraftClientGUI
         private Label lblLogin, lblPass, lblIP, lblActive;
         private DarkComboBox cmbLogin, cmbIP;
         private TextBox txtPassword;
+        private CheckBox chkRememberPassword;
         private FlatBtn btnAddBot;
         private TextBox boxGlobalInput;
         private FlatBtn btnGlobalSend;
@@ -109,7 +110,7 @@ namespace MinecraftClientGUI
             LoadSettings();
             LoadMacros();
             UpdateLanguage();
-            if (args.Length > 0) AddNewTab("Auto-Bot", args);
+            if (args.Length > 0) AddNewTab("Session", args);
             this.FormClosing += (s, e) => { foreach (var t in tabs.ToList()) t.CloseTab(); };
         }
 
@@ -129,39 +130,41 @@ namespace MinecraftClientGUI
 
         private void BuildUI()
         {
-            this.Text = "MCC Multibox Commander";
-            this.Size = new Size(1200, 780);
-            this.MinimumSize = new Size(900, 600);
+            this.Text = "Client Console";
+            this.Size = new Size(1080, 720);
+            this.MinimumSize = new Size(860, 560);
             this.BackColor = Theme.BgDark;
             this.ForeColor = Theme.Text;
             this.Font = new Font("Segoe UI", 9f);
             this.StartPosition = FormStartPosition.CenterScreen;
 
             // TOP PANEL
-            topPanel = new Panel { Dock = DockStyle.Top, Height = 60, BackColor = Theme.BgHeader, Padding = new Padding(12, 0, 12, 0) };
+            topPanel = new Panel { Dock = DockStyle.Top, Height = 64, BackColor = Theme.BgHeader, Padding = new Padding(12, 0, 12, 0) };
             topPanel.Paint += PaintBottomBorder;
             this.Controls.Add(topPanel);
 
             int y = 17;
-            lblLogin = MkLabel("Username / Email:", 10, 2); topPanel.Controls.Add(lblLogin);
+            lblLogin = MkLabel("Account:", 10, 2); topPanel.Controls.Add(lblLogin);
             cmbLogin = new DarkComboBox { Location = new Point(10, y), Size = new Size(195, 26) }; topPanel.Controls.Add(cmbLogin);
 
             lblPass = MkLabel("Password:", 215, 2); topPanel.Controls.Add(lblPass);
             txtPassword = new TextBox { Location = new Point(215, y), Size = new Size(155, 26), BackColor = Theme.BgInput, ForeColor = Theme.Text, BorderStyle = BorderStyle.FixedSingle, UseSystemPasswordChar = true, Font = new Font("Segoe UI", 9f) };
             topPanel.Controls.Add(txtPassword);
+            chkRememberPassword = new CheckBox { Text = "Remember", Location = new Point(215, 43), Size = new Size(96, 18), ForeColor = Theme.TextDim, Font = new Font("Segoe UI", 8f), BackColor = Theme.BgHeader };
+            topPanel.Controls.Add(chkRememberPassword);
 
-            lblIP = MkLabel("Server IP:", 380, 2); topPanel.Controls.Add(lblIP);
+            lblIP = MkLabel("Server:", 380, 2); topPanel.Controls.Add(lblIP);
             cmbIP = new DarkComboBox { Location = new Point(380, y), Size = new Size(215, 26) }; topPanel.Controls.Add(cmbIP);
 
-            btnAddBot = new FlatBtn("+ Add Account", Theme.Accent, Theme.AccentHover) { Location = new Point(608, y - 1), Size = new Size(148, 28) };
+            btnAddBot = new FlatBtn("Connect", Theme.Accent, Theme.AccentHover) { Location = new Point(608, y - 1), Size = new Size(118, 28) };
             btnAddBot.Click += BtnAddBot_Click;
             topPanel.Controls.Add(btnAddBot);
 
-            lblActive = new Label { Location = new Point(770, y), AutoSize = true, ForeColor = Theme.AccentGreen, Font = new Font("Segoe UI", 9f, FontStyle.Bold) };
+            lblActive = new Label { Location = new Point(744, y), AutoSize = true, ForeColor = Theme.AccentGreen, Font = new Font("Segoe UI", 9f, FontStyle.Bold) };
             topPanel.Controls.Add(lblActive);
 
             var timer = new System.Windows.Forms.Timer { Interval = 1000 };
-            timer.Tick += (s, e) => lblActive.Text = (currentLang == "en" ? "Active accounts: " : "Aktywne konta: ") + tabs.Count;
+            timer.Tick += (s, e) => lblActive.Text = (currentLang == "en" ? "Sessions: " : "Sesje: ") + tabs.Count;
             timer.Start();
 
             // RIGHT PANEL
@@ -170,12 +173,12 @@ namespace MinecraftClientGUI
             this.Controls.Add(rightPanel);
 
             // Language toggle - large button at the top
-            btnLangSwitch = new FlatBtn("PL", Color.FromArgb(45, 75, 145), Color.FromArgb(60, 100, 185))
+            btnLangSwitch = new FlatBtn("PL", Color.FromArgb(210, 210, 210), Color.FromArgb(225, 225, 225))
             {
                 Dock = DockStyle.Top,
                 Height = 36,
                 Font = new Font("Segoe UI", 11f, FontStyle.Bold),
-                ForeColor = Color.White
+                ForeColor = Theme.Text
             };
             btnLangSwitch.Click += (s, e) => { currentLang = currentLang == "en" ? "pl" : "en"; UpdateLanguage(); };
             rightPanel.Controls.Add(btnLangSwitch);
@@ -185,7 +188,7 @@ namespace MinecraftClientGUI
             macroHeader.Paint += PaintBottomBorder;
             rightPanel.Controls.Add(macroHeader);
 
-            lblMacrosTitle = new Label { Text = "Quick Actions", Location = new Point(8, 8), Size = new Size(169, 18), ForeColor = Theme.Text, Font = new Font("Segoe UI", 9f, FontStyle.Bold) };
+            lblMacrosTitle = new Label { Text = "Actions", Location = new Point(8, 8), Size = new Size(169, 18), ForeColor = Theme.Text, Font = new Font("Segoe UI", 9f, FontStyle.Bold) };
             macroHeader.Controls.Add(lblMacrosTitle);
 
             btnEditMacros = new FlatBtn("Edit", Color.FromArgb(40, 40, 58)) { Location = new Point(8, 28), Size = new Size(76, 20), Font = new Font("Segoe UI", 8f, FontStyle.Bold) };
@@ -208,11 +211,11 @@ namespace MinecraftClientGUI
             bottomPanel.Paint += PaintTopBorder;
             this.Controls.Add(bottomPanel);
 
-            btnGlobalSend = new FlatBtn("Send", Color.FromArgb(50, 90, 160), Theme.Accent) { Dock = DockStyle.Right, Width = 80 };
+            btnGlobalSend = new FlatBtn("Send", Theme.Accent, Theme.AccentHover) { Dock = DockStyle.Right, Width = 80 };
             btnGlobalSend.Click += BtnGlobalSend_Click;
             bottomPanel.Controls.Add(btnGlobalSend);
 
-            chkSendToAll = new CheckBox { Text = "Send to all", Dock = DockStyle.Right, Width = 120, ForeColor = Color.FromArgb(255, 160, 90), Padding = new Padding(8, 0, 0, 0), Font = new Font("Segoe UI", 9f, FontStyle.Bold) };
+            chkSendToAll = new CheckBox { Text = "All sessions", Dock = DockStyle.Right, Width = 120, ForeColor = Theme.TextDim, Padding = new Padding(8, 0, 0, 0), Font = new Font("Segoe UI", 9f, FontStyle.Bold) };
             bottomPanel.Controls.Add(chkSendToAll);
 
             boxGlobalInput = new TextBox { Dock = DockStyle.Fill, BackColor = Theme.BgInput, ForeColor = Theme.Text, BorderStyle = BorderStyle.FixedSingle, Font = new Font("Consolas", 11f) };
@@ -309,15 +312,16 @@ namespace MinecraftClientGUI
         {
             bool en = currentLang == "en";
             btnLangSwitch.Text = en ? "Switch to PL" : "Switch to EN";
-            lblLogin.Text = en ? "Username / Email:" : "Login / Email:";
+            lblLogin.Text = en ? "Account:" : "Konto:";
             lblPass.Text = en ? "Password:" : "Haslo:";
-            lblIP.Text = en ? "Server IP:" : "IP Serwera:";
-            btnAddBot.Text = en ? "+ Add Account" : "+ Dodaj Konto";
-            lblMacrosTitle.Text = en ? "Quick Actions" : "Szybkie Akcje";
+            chkRememberPassword.Text = en ? "Remember" : "Pamietaj";
+            lblIP.Text = en ? "Server:" : "Serwer:";
+            btnAddBot.Text = en ? "Connect" : "Polacz";
+            lblMacrosTitle.Text = en ? "Actions" : "Akcje";
             btnEditMacros.Text = en ? "Edit" : "Edytuj";
             btnRefreshMacros.Text = en ? "Reload" : "Odswiez";
             btnGlobalSend.Text = en ? "Send" : "Wyslij";
-            chkSendToAll.Text = en ? "Send to all" : "Wyslij do wszystkich";
+            chkSendToAll.Text = en ? "All sessions" : "Wszystkie";
             foreach (var tab in tabs) tab.UpdateLang(currentLang);
         }
 
@@ -350,8 +354,8 @@ namespace MinecraftClientGUI
 
         private void AddMacroBtn(string cmd, string label, Color color)
         {
-            Color bg = Color.FromArgb(32, 32, 48);
-            Color hov = Color.FromArgb(44, 44, 64);
+            Color bg = Theme.BgCard;
+            Color hov = Color.FromArgb(242, 242, 242);
             var btn = new Button
             {
                 Text = "  " + label,
@@ -382,7 +386,7 @@ namespace MinecraftClientGUI
             string user = cmbLogin.Text.Trim(), pass = txtPassword.Text.Trim(), ip = cmbIP.Text.Trim();
             if (string.IsNullOrEmpty(user) || string.IsNullOrEmpty(ip))
             {
-                MessageBox.Show(currentLang == "en" ? "Please enter username and IP!" : "Podaj login i IP serwera!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(currentLang == "en" ? "Please enter account and server." : "Podaj konto i serwer.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
             SaveSettings(user, ip);
@@ -409,7 +413,11 @@ namespace MinecraftClientGUI
                 {
                     lines.Add(string.Empty);
                 }
-                if (lines.Count > 0) txtPassword.Text = lines[0];
+                if (lines.Count > 0)
+                {
+                    txtPassword.Text = lines[0];
+                    chkRememberPassword.Checked = !string.IsNullOrEmpty(lines[0]);
+                }
                 if (lines.Count > 1) { historyLogins = lines[1].Split('|').ToList(); cmbLogin.Items.AddRange(historyLogins.ToArray()); if (cmbLogin.Items.Count > 0) cmbLogin.SelectedIndex = 0; }
                 if (lines.Count > 2) { historyIPs = lines[2].Split('|').ToList(); cmbIP.Items.AddRange(historyIPs.ToArray()); if (cmbIP.Items.Count > 0) cmbIP.SelectedIndex = 0; }
             }
@@ -422,7 +430,8 @@ namespace MinecraftClientGUI
             historyIPs.Remove(ip); historyIPs.Insert(0, ip); if (historyIPs.Count > 10) historyIPs.RemoveAt(10);
             cmbLogin.Items.Clear(); cmbLogin.Items.AddRange(historyLogins.ToArray()); cmbLogin.Text = user;
             cmbIP.Items.Clear(); cmbIP.Items.AddRange(historyIPs.ToArray()); cmbIP.Text = ip;
-            try { File.WriteAllLines(SettingsFile, new[] { txtPassword.Text, string.Join("|", historyLogins), string.Join("|", historyIPs) }); } catch { }
+            string storedPassword = chkRememberPassword.Checked ? txtPassword.Text : string.Empty;
+            try { File.WriteAllLines(SettingsFile, new[] { storedPassword, string.Join("|", historyLogins), string.Join("|", historyIPs) }); } catch { }
         }
 
         private void PaintBottomBorder(object sender, PaintEventArgs e) { var c = (Control)sender; e.Graphics.DrawLine(new Pen(Theme.Border), 0, c.Height - 1, c.Width, c.Height - 1); }
@@ -490,7 +499,7 @@ namespace MinecraftClientGUI
                 Dock = DockStyle.Right,
                 Width = 105,
                 FlatStyle = FlatStyle.Flat,
-                BackColor = Color.FromArgb(160, 45, 45),
+                BackColor = Color.FromArgb(128, 64, 64),
                 ForeColor = Color.White,
                 Font = new Font("Segoe UI", 9f, FontStyle.Bold),
                 Cursor = Cursors.Hand
@@ -527,7 +536,7 @@ namespace MinecraftClientGUI
             {
                 Text = "  ● " + title,
                 Dock = DockStyle.Fill,
-                ForeColor = Theme.TextMuted,
+                ForeColor = Theme.TextDim,
                 Font = new Font("Segoe UI", 9f, FontStyle.Bold),
                 TextAlign = ContentAlignment.MiddleLeft
             };
@@ -550,7 +559,7 @@ namespace MinecraftClientGUI
             {
                 Dock = DockStyle.Fill,
                 BackColor = Theme.BgDark,
-                ForeColor = Color.FromArgb(200, 200, 215),
+                ForeColor = Theme.Text,
                 Font = new Font("Consolas", 10f),
                 BorderStyle = BorderStyle.None,
                 ReadOnly = true,
@@ -647,13 +656,13 @@ namespace MinecraftClientGUI
         {
             if (line.Type == LineType.System || line.Type == LineType.Error)
             {
-                boxOutput.SelectionColor = line.Type == LineType.Error ? Color.FromArgb(220, 80, 80) : Color.FromArgb(85, 85, 105);
+                boxOutput.SelectionColor = line.Type == LineType.Error ? Theme.AccentRed : Theme.TextDim;
                 boxOutput.AppendText(line.Display + "\n");
             }
             else
             {
                 string[] subs = line.Raw.Split('\u00a7');
-                boxOutput.SelectionColor = Color.FromArgb(200, 200, 215);
+                boxOutput.SelectionColor = Theme.Text;
                 if (subs.Length > 0) boxOutput.AppendText(subs[0]);
                 for (int i = 1; i < subs.Length; i++)
                 {
@@ -734,7 +743,7 @@ namespace MinecraftClientGUI
         private void PrintSystem(string text, LineType type, Color? color = null)
         {
             string prefix = type == LineType.Error ? "[ERR] " : "[SYS] ";
-            Color c = color ?? (type == LineType.Error ? Color.FromArgb(220, 80, 80) : Color.FromArgb(85, 85, 105));
+            Color c = color ?? (type == LineType.Error ? Theme.AccentRed : Theme.TextDim);
             var entry = new LogLine { Raw = prefix + text, Display = prefix + text, Type = type, Time = DateTime.Now };
             lock (logLock) allLines.Add(entry);
             WriteLog(text, type);

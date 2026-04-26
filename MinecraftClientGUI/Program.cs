@@ -21,7 +21,7 @@ namespace MinecraftClientGUI
             {
                 DialogResult result = MessageBox.Show(
                     "File not found: " + MinecraftClient.ExePath + Environment.NewLine + Environment.NewLine
-                    + "Place MinecraftClient.exe in the same folder as MinecraftClientGUI.exe." + Environment.NewLine + Environment.NewLine
+                    + "Place MinecraftClient.exe in the same folder as this GUI application." + Environment.NewLine + Environment.NewLine
                     + "Download MinecraftClient.exe from:" + Environment.NewLine
                     + ReleasesUrl + Environment.NewLine + Environment.NewLine
                     + "Open the releases page now?",
