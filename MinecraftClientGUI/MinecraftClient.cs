@@ -22,6 +22,7 @@ namespace MinecraftClientGUI
         private LinkedList<string> tabAutoCompleteBuffer = new LinkedList<string>();
         private bool disconnected = false;
         private Process Client;
+        private StreamWriter ClientInput;
         private Thread Reader;
 
         public MinecraftClient(string[] args)
@@ -53,6 +54,7 @@ namespace MinecraftClientGUI
                 Client.StartInfo.RedirectStandardInput = true;
                 Client.StartInfo.CreateNoWindow = true;
                 Client.Start();
+                ClientInput = new StreamWriter(Client.StandardInput.BaseStream, new UTF8Encoding(false)) { AutoFlush = true };
 
                 Reader = new Thread(new ThreadStart(t_reader));
                 Reader.Start();
@@ -143,7 +145,30 @@ namespace MinecraftClientGUI
                 text = text.Trim();
                 if (text.Length > 0)
                 {
-                    Client.StandardInput.WriteLine(text);
+                    if (text[0] == '/' && (text.Length == 1 || text[1] != '/'))
+                    {
+                        text = "/" + text;
+                    }
+                    ClientInput.WriteLine(text);
+                }
+            }
+        }
+
+        public void SendInternalCommand(string command)
+        {
+            if (command != null && !Client.HasExited)
+            {
+                command = command.Replace("\t", "");
+                command = command.Replace("\r", "");
+                command = command.Replace("\n", "");
+                command = command.Trim();
+                if (command.Length > 0)
+                {
+                    if (command[0] != '/')
+                    {
+                        command = "/" + command;
+                    }
+                    ClientInput.WriteLine(command);
                 }
             }
         }
@@ -152,13 +177,14 @@ namespace MinecraftClientGUI
         {
             if (!Client.HasExited)
             {
-                Client.StandardInput.WriteLine("/quit");
+                ClientInput.WriteLine("/quit");
                 if (Reader.IsAlive) { Reader.Abort(); }
                 if (!Client.WaitForExit(2000))
                 {
                     try { Client.Kill(); } catch { }
                 }
             }
+            try { ClientInput?.Close(); } catch { }
         }
     }
 }

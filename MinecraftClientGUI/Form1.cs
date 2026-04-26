@@ -5,6 +5,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -12,21 +13,21 @@ namespace MinecraftClientGUI
 {
     static class Theme
     {
-        public static Color BgDark = Color.FromArgb(248, 248, 248);
-        public static Color BgPanel = Color.FromArgb(239, 239, 239);
-        public static Color BgHeader = Color.FromArgb(245, 245, 245);
-        public static Color BgCard = Color.FromArgb(255, 255, 255);
-        public static Color BgInput = Color.White;
-        public static Color TabActive = Color.White;
-        public static Color TabInactive = Color.FromArgb(232, 232, 232);
-        public static Color Accent = Color.FromArgb(88, 88, 88);
-        public static Color AccentHover = Color.FromArgb(108, 108, 108);
-        public static Color AccentRed = Color.FromArgb(150, 55, 55);
-        public static Color AccentGreen = Color.FromArgb(65, 120, 80);
-        public static Color Text = Color.FromArgb(30, 30, 30);
-        public static Color TextDim = Color.FromArgb(95, 95, 95);
-        public static Color TextMuted = Color.FromArgb(135, 135, 135);
-        public static Color Border = Color.FromArgb(214, 214, 214);
+        public static Color BgDark = Color.FromArgb(18, 19, 22);
+        public static Color BgPanel = Color.FromArgb(26, 27, 31);
+        public static Color BgHeader = Color.FromArgb(31, 32, 37);
+        public static Color BgCard = Color.FromArgb(37, 38, 44);
+        public static Color BgInput = Color.FromArgb(22, 23, 27);
+        public static Color TabActive = Color.FromArgb(43, 44, 51);
+        public static Color TabInactive = Color.FromArgb(26, 27, 31);
+        public static Color Accent = Color.FromArgb(88, 112, 150);
+        public static Color AccentHover = Color.FromArgb(104, 132, 176);
+        public static Color AccentRed = Color.FromArgb(205, 85, 85);
+        public static Color AccentGreen = Color.FromArgb(96, 190, 120);
+        public static Color Text = Color.FromArgb(226, 228, 234);
+        public static Color TextDim = Color.FromArgb(165, 169, 180);
+        public static Color TextMuted = Color.FromArgb(104, 108, 120);
+        public static Color Border = Color.FromArgb(54, 56, 64);
     }
 
     class DarkComboBox : ComboBox
@@ -173,7 +174,7 @@ namespace MinecraftClientGUI
             this.Controls.Add(rightPanel);
 
             // Language toggle - large button at the top
-            btnLangSwitch = new FlatBtn("PL", Color.FromArgb(210, 210, 210), Color.FromArgb(225, 225, 225))
+            btnLangSwitch = new FlatBtn("PL", Theme.BgCard, Color.FromArgb(49, 51, 60))
             {
                 Dock = DockStyle.Top,
                 Height = 36,
@@ -191,11 +192,11 @@ namespace MinecraftClientGUI
             lblMacrosTitle = new Label { Text = "Actions", Location = new Point(8, 8), Size = new Size(169, 18), ForeColor = Theme.Text, Font = new Font("Segoe UI", 9f, FontStyle.Bold) };
             macroHeader.Controls.Add(lblMacrosTitle);
 
-            btnEditMacros = new FlatBtn("Edit", Color.FromArgb(40, 40, 58)) { Location = new Point(8, 28), Size = new Size(76, 20), Font = new Font("Segoe UI", 8f, FontStyle.Bold) };
+            btnEditMacros = new FlatBtn("Edit", Theme.BgCard, Color.FromArgb(49, 51, 60)) { Location = new Point(8, 28), Size = new Size(76, 20), Font = new Font("Segoe UI", 8f, FontStyle.Bold) };
             btnEditMacros.Click += BtnEditMacros_Click;
             macroHeader.Controls.Add(btnEditMacros);
 
-            btnRefreshMacros = new FlatBtn("Reload", Color.FromArgb(40, 40, 58)) { Location = new Point(90, 28), Size = new Size(76, 20), Font = new Font("Segoe UI", 8f, FontStyle.Bold) };
+            btnRefreshMacros = new FlatBtn("Reload", Theme.BgCard, Color.FromArgb(49, 51, 60)) { Location = new Point(90, 28), Size = new Size(76, 20), Font = new Font("Segoe UI", 8f, FontStyle.Bold) };
             btnRefreshMacros.Click += (s, e) => LoadMacros();
             macroHeader.Controls.Add(btnRefreshMacros);
 
@@ -355,7 +356,7 @@ namespace MinecraftClientGUI
         private void AddMacroBtn(string cmd, string label, Color color)
         {
             Color bg = Theme.BgCard;
-            Color hov = Color.FromArgb(242, 242, 242);
+            Color hov = Color.FromArgb(49, 51, 60);
             var btn = new Button
             {
                 Text = "  " + label,
@@ -461,8 +462,17 @@ namespace MinecraftClientGUI
         private Button btnDisconnect;
         private Label lblStatus;
         private Label lblTimer;
+        private Panel inventoryPanel;
+        private Label lblInventoryTitle;
+        private ListView inventoryList;
+        private Button btnRefreshInventory;
+        private Button btnCloseInventory;
         private CheckBox chkAutoScroll;
         private bool autoScroll = true;
+        private bool inventoryVisible = false;
+        private int currentInventoryId = -1;
+        private string currentInventoryTitle = "";
+        private bool capturingInventory = false;
 
         private Button btnFilterAll, btnFilterChat, btnFilterSystem, btnFilterError;
         private LineType? activeFilter = null;
@@ -473,6 +483,7 @@ namespace MinecraftClientGUI
         private StreamWriter logWriter;
         private DateTime connectedAt;
         private System.Windows.Forms.Timer timerClock;
+        private System.Windows.Forms.Timer timerInventoryRefresh;
         private bool isConnected = false;
 
         public string TabTitle { get; set; }
@@ -554,6 +565,56 @@ namespace MinecraftClientGUI
             SetFilterActive(btnFilterAll);
             this.Controls.Add(filterBar);
 
+            // Inventory panel
+            inventoryPanel = new Panel
+            {
+                Dock = DockStyle.Right,
+                Width = 320,
+                BackColor = Theme.BgPanel,
+                Visible = false
+            };
+            inventoryPanel.Paint += (s, e) => e.Graphics.DrawLine(new Pen(Theme.Border), 0, 0, 0, inventoryPanel.Height);
+
+            var inventoryHeader = new Panel { Dock = DockStyle.Top, Height = 58, BackColor = Theme.BgHeader };
+            inventoryHeader.Paint += (s, e) => e.Graphics.DrawLine(new Pen(Theme.Border), 0, inventoryHeader.Height - 1, inventoryHeader.Width, inventoryHeader.Height - 1);
+
+            lblInventoryTitle = new Label
+            {
+                Text = "Inventory",
+                Location = new Point(10, 8),
+                Size = new Size(200, 18),
+                ForeColor = Theme.Text,
+                Font = new Font("Segoe UI", 9f, FontStyle.Bold)
+            };
+            inventoryHeader.Controls.Add(lblInventoryTitle);
+
+            btnCloseInventory = MakePanelButton("Close", 226, 6, 78);
+            btnCloseInventory.Click += (s, e) => Client?.SendInternalCommand("inventory container close");
+            inventoryHeader.Controls.Add(btnCloseInventory);
+
+            btnRefreshInventory = MakePanelButton("Refresh", 10, 31, 88);
+            btnRefreshInventory.Click += (s, e) => RequestInventorySnapshot();
+            inventoryHeader.Controls.Add(btnRefreshInventory);
+
+            inventoryPanel.Controls.Add(inventoryHeader);
+
+            inventoryList = new ListView
+            {
+                Dock = DockStyle.Fill,
+                View = View.Details,
+                FullRowSelect = true,
+                GridLines = false,
+                HeaderStyle = ColumnHeaderStyle.Nonclickable,
+                BackColor = Theme.BgCard,
+                ForeColor = Theme.Text,
+                BorderStyle = BorderStyle.None,
+                Font = new Font("Segoe UI", 9f)
+            };
+            inventoryList.Columns.Add("Slot", 52);
+            inventoryList.Columns.Add("Item", 238);
+            inventoryPanel.Controls.Add(inventoryList);
+            this.Controls.Add(inventoryPanel);
+
             // Console
             boxOutput = new RichTextBox
             {
@@ -582,6 +643,13 @@ namespace MinecraftClientGUI
                 }
             };
             timerClock.Start();
+
+            timerInventoryRefresh = new System.Windows.Forms.Timer { Interval = 1200 };
+            timerInventoryRefresh.Tick += (s, e) => {
+                if (inventoryVisible && isConnected)
+                    RequestInventorySnapshot();
+            };
+            timerInventoryRefresh.Start();
 
             PrintSystem("Initializing...", LineType.System);
             if (args.Length == 3) new Thread(() => InitClient(new MinecraftClient(args[0], args[1], args[2]))).Start();
@@ -626,6 +694,24 @@ namespace MinecraftClientGUI
             btn.FlatAppearance.BorderColor = Theme.Border;
             btn.Click += (s, e) => { activeFilter = type; SetFilterActive(btn); RedrawFiltered(); };
             parent.Controls.Add(btn);
+            return btn;
+        }
+
+        private Button MakePanelButton(string label, int x, int y, int width)
+        {
+            var btn = new Button
+            {
+                Text = label,
+                Location = new Point(x, y),
+                Size = new Size(width, 22),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Theme.BgCard,
+                ForeColor = Theme.TextDim,
+                Font = new Font("Segoe UI", 8f, FontStyle.Bold),
+                Cursor = Cursors.Hand
+            };
+            btn.FlatAppearance.BorderSize = 1;
+            btn.FlatAppearance.BorderColor = Theme.Border;
             return btn;
         }
 
@@ -732,6 +818,7 @@ namespace MinecraftClientGUI
             {
                 isConnected = false;
                 timerClock?.Stop();
+                timerInventoryRefresh?.Stop();
                 logWriter?.WriteLine("=== Session ended: " + DateTime.Now + " ===");
                 logWriter?.Close();
                 if (Client != null) { Client.Close(); Client = null; }
@@ -760,6 +847,7 @@ namespace MinecraftClientGUI
         private void PrintChat(string raw)
         {
             string plain = System.Text.RegularExpressions.Regex.Replace(raw, @"§.", "");
+            HandleInventoryUiLine(plain);
             var entry = new LogLine { Raw = raw, Display = plain, Type = LineType.Chat, Time = DateTime.Now };
             lock (logLock) allLines.Add(entry);
             WriteLog(plain, LineType.Chat);
@@ -775,6 +863,102 @@ namespace MinecraftClientGUI
         }
 
         private void InvokeUI(Action a) { if (!boxOutput.IsDisposed) { if (boxOutput.InvokeRequired) try { boxOutput.Invoke(a); } catch { } else a(); } }
+        private void RequestInventorySnapshot()
+        {
+            if (Client != null && !Client.Disconnected)
+            {
+                capturingInventory = true;
+                Client.SendInternalCommand("inventory container list");
+            }
+        }
+
+        private void HandleInventoryUiLine(string line)
+        {
+            string plain = StripLogPrefix(line).Trim();
+
+            Match open = Regex.Match(plain, @"Inventory\s+#\s*(\d+)\s+opened:\s*(.+)$", RegexOptions.IgnoreCase);
+            if (open.Success)
+            {
+                currentInventoryId = int.Parse(open.Groups[1].Value);
+                currentInventoryTitle = open.Groups[2].Value.Trim();
+                InvokeUI(() => {
+                    lblInventoryTitle.Text = "#" + currentInventoryId + " " + currentInventoryTitle;
+                    inventoryList.Items.Clear();
+                    inventoryPanel.Visible = true;
+                    inventoryVisible = true;
+                });
+                ThreadPool.QueueUserWorkItem(_ => {
+                    Thread.Sleep(350);
+                    RequestInventorySnapshot();
+                });
+                return;
+            }
+
+            Match close = Regex.Match(plain, @"Inventory\s+#\s*(\d+)\s+closed\.", RegexOptions.IgnoreCase);
+            if (close.Success && int.TryParse(close.Groups[1].Value, out int closedId) && closedId == currentInventoryId)
+            {
+                InvokeUI(() => {
+                    inventoryPanel.Visible = false;
+                    inventoryVisible = false;
+                    inventoryList.Items.Clear();
+                });
+                currentInventoryId = -1;
+                currentInventoryTitle = "";
+                capturingInventory = false;
+                return;
+            }
+
+            Match header = Regex.Match(plain, @"Inventory\s+#\s*(\d+)\s+-\s*(.+)$", RegexOptions.IgnoreCase);
+            if (header.Success)
+            {
+                capturingInventory = true;
+                currentInventoryId = int.Parse(header.Groups[1].Value);
+                currentInventoryTitle = header.Groups[2].Value.Trim();
+                InvokeUI(() => {
+                    lblInventoryTitle.Text = "#" + currentInventoryId + " " + currentInventoryTitle;
+                    inventoryList.Items.Clear();
+                    inventoryPanel.Visible = true;
+                    inventoryVisible = true;
+                });
+                return;
+            }
+
+            if (!capturingInventory)
+                return;
+
+            Match item = Regex.Match(plain, @"^(?:>?\d+|\s*)\s*\|\s*#\s*(-?\d+)\s*:\s*(.+)$");
+            if (item.Success)
+            {
+                string slot = item.Groups[1].Value;
+                string itemText = item.Groups[2].Value.Trim();
+                InvokeUI(() => UpsertInventoryItem(slot, itemText));
+            }
+        }
+
+        private static string StripLogPrefix(string line)
+        {
+            int bracket = line.LastIndexOf(']');
+            if (line.StartsWith("[") && bracket >= 0 && bracket < line.Length - 1)
+                return line.Substring(bracket + 1);
+            return line;
+        }
+
+        private void UpsertInventoryItem(string slot, string itemText)
+        {
+            foreach (ListViewItem existing in inventoryList.Items)
+            {
+                if (existing.Text == slot)
+                {
+                    existing.SubItems[1].Text = itemText;
+                    return;
+                }
+            }
+
+            var row = new ListViewItem(slot);
+            row.SubItems.Add(itemText);
+            inventoryList.Items.Add(row);
+        }
+
         private Font GetFont(char c, Font f) => c == 'l' ? new Font(f, FontStyle.Bold) : f;
         private Color GetColor(char c)
         {

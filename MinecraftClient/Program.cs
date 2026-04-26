@@ -78,6 +78,8 @@ namespace MinecraftClient
         /// </summary>
         static void Main(string[] args)
         {
+            ConfigureConsoleEncoding();
+
             // [SENTRY] Initialize Sentry SDK only if the DSN is not empty
             if (SentryDSN != string.Empty)
             {
@@ -100,22 +102,6 @@ namespace MinecraftClient
             {
                 // "ToLower" require "CultureInfo" to be initialized on first run, which can take a lot of time.
                 _ = "a".ToLower();
-
-                //Take advantage of Windows 10 / Mac / Linux UTF-8 console
-                if (OperatingSystem.IsWindows())
-                {
-                    // If we're on windows, check if our version is Win10 or greater.
-                    if (OperatingSystem.IsWindowsVersionAtLeast(10))
-                        Console.OutputEncoding = Console.InputEncoding = Encoding.UTF8;
-                }
-                else
-                {
-                    // Apply to all other operating systems.
-                    Console.OutputEncoding = Console.InputEncoding = Encoding.UTF8;
-                }
-
-                // Fix issue #2119
-                Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             });
 
             ConsoleIO.LogPrefix = "§8[MCC] ";
@@ -216,6 +202,18 @@ namespace MinecraftClient
             // MaybePrintClassicModeTuiRecommendation();
 
             RunStartupSequence(args);
+        }
+
+        private static void ConfigureConsoleEncoding()
+        {
+            // Fix issue #2119 and make redirected BasicIO stdin/stdout deterministic for GUI wrappers.
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+
+            if (!OperatingSystem.IsWindows() || OperatingSystem.IsWindowsVersionAtLeast(10))
+            {
+                Console.OutputEncoding = Encoding.UTF8;
+                Console.InputEncoding = Encoding.UTF8;
+            }
         }
 
         /// <summary>

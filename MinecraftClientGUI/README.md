@@ -15,5 +15,6 @@ The output executable is `ClientConsole.exe`. Put `MinecraftClient.exe` in the s
 - Use the bottom input to send text or commands to the active session.
 - Enable `All sessions` to send to every connected session.
 - Edit `macros.txt` next to the executable to customize the action buttons.
+- When the server opens a supported inventory or container, the session shows a side panel with the current slot list.
 
 Passwords are not saved unless `Remember` is checked.
