@@ -90,7 +90,7 @@ namespace MinecraftClientGUI
         private DarkComboBox cmbLogin, cmbIP;
         private TextBox txtPassword;
         private CheckBox chkRememberPassword;
-        private FlatBtn btnAddBot;
+        private FlatBtn btnAddBot, btnOpenMenu;
         private TextBox boxGlobalInput;
         private FlatBtn btnGlobalSend;
         private CheckBox chkSendToAll;
@@ -161,7 +161,11 @@ namespace MinecraftClientGUI
             btnAddBot.Click += BtnAddBot_Click;
             topPanel.Controls.Add(btnAddBot);
 
-            lblActive = new Label { Location = new Point(744, y), AutoSize = true, ForeColor = Theme.AccentGreen, Font = new Font("Segoe UI", 9f, FontStyle.Bold) };
+            btnOpenMenu = new FlatBtn("Menu", Theme.BgCard, Color.FromArgb(49, 51, 60)) { Location = new Point(736, y - 1), Size = new Size(76, 28) };
+            btnOpenMenu.Click += BtnOpenMenu_Click;
+            topPanel.Controls.Add(btnOpenMenu);
+
+            lblActive = new Label { Location = new Point(824, y), AutoSize = true, ForeColor = Theme.AccentGreen, Font = new Font("Segoe UI", 9f, FontStyle.Bold) };
             topPanel.Controls.Add(lblActive);
 
             var timer = new System.Windows.Forms.Timer { Interval = 1000 };
@@ -318,6 +322,7 @@ namespace MinecraftClientGUI
             chkRememberPassword.Text = en ? "Remember" : "Pamietaj";
             lblIP.Text = en ? "Server:" : "Serwer:";
             btnAddBot.Text = en ? "Connect" : "Polacz";
+            btnOpenMenu.Text = "Menu";
             lblMacrosTitle.Text = en ? "Actions" : "Akcje";
             btnEditMacros.Text = en ? "Edit" : "Edytuj";
             btnRefreshMacros.Text = en ? "Reload" : "Odswiez";
@@ -402,6 +407,19 @@ namespace MinecraftClientGUI
             if (chkSendToAll.Checked) foreach (var tab in tabs) tab.Send(cmd);
             else activeTab?.Send(cmd);
             boxGlobalInput.Clear();
+        }
+
+        private void BtnOpenMenu_Click(object sender, EventArgs e)
+        {
+            if (chkSendToAll.Checked)
+            {
+                foreach (var tab in tabs)
+                    tab.OpenServerMenu();
+            }
+            else
+            {
+                activeTab?.OpenServerMenu();
+            }
         }
 
         private void LoadSettings()
@@ -809,6 +827,18 @@ namespace MinecraftClientGUI
             {
                 Client.SendText(text);
                 InvokeUI(() => PrintSystem("> " + text, LineType.System, Color.FromArgb(100, 180, 255)));
+            }
+        }
+
+        public void OpenServerMenu()
+        {
+            if (Client != null && !Client.Disconnected)
+            {
+                Send("/menu");
+                ThreadPool.QueueUserWorkItem(_ => {
+                    Thread.Sleep(600);
+                    RequestInventorySnapshot();
+                });
             }
         }
 

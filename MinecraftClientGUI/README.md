@@ -12,6 +12,7 @@ The output executable is `ClientConsole.exe`. Put `MinecraftClient.exe` in the s
 
 - Enter an account, optional password, and server address.
 - Click `Connect` to open a session tab.
+- Click `Menu` to send `/menu` to the active server session.
 - Use the bottom input to send text or commands to the active session.
 - Enable `All sessions` to send to every connected session.
 - Edit `macros.txt` next to the executable to customize the action buttons.
